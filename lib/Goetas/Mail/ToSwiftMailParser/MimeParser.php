@@ -10,36 +10,43 @@ class MimeParser {
     private $grammar;
     private $contentDecoder;
     private $headerDecoder;
-    protected $removeHeaders = array ("Received","From","X-Original-To","Return-Path","MIME-Version","Received-SPF","Delivered-To");
-    public function __construct(array $removeHeaders = array()) {
+    protected $removeHeaders = array ("Received","From","X-Original-To","MIME-Version","Received-SPF","Delivered-To");
+    protected $allowedHeaders = array ("return-path","subject");
+    public function __construct(array $allowedHeaders = array(), array $removeHeaders = array()) {
         $this->cache = \Swift_DependencyContainer::getInstance ()->lookup ( 'cache' );
         $this->grammar = \Swift_DependencyContainer::getInstance ()->lookup ( 'mime.grammar' );
         $this->contentDecoder = new ContentDecoder ();
         $this->headerDecoder = new HeaderDecoder ();
 
+        $this->allowedHeaders = array_merge ( $this->allowedHeaders, $allowedHeaders );
         $this->removeHeaders = array_merge ( $this->removeHeaders, $removeHeaders );
     }
     /**
      *
      * @param stream $stream
-     *            A MIME message stream
-     * @return \Swift_Message
+     * @param boolean $fillHeaders (default to false)
+     * @param \Swift_Mime_SimpleMimeEntity $message (default to null)
+     * @return Swift_Mime_SimpleMimeEntity|\Swift_Message
      */
-    public function parseStream($stream, $fillHeaders = false) {
+    public function parseStream($stream, $fillHeaders = false,  \Swift_Mime_SimpleMimeEntity $message = null) {
         $partHeaders = $this->extractHeaders ( $stream );
 
-        $partHeaders = $this->filterHeaders ( $partHeaders );
+
+        $filteredHeaders = $this->filterHeaders ( $partHeaders );
 
         $parts = $this->parseParts ( $stream, $partHeaders );
+        if(!$message){
+            $message = new \Swift_Message ();
+        }
 
-        $message = new \Swift_Message ();
+        $headers = $this->createHeadersSet ( $filteredHeaders );
 
-        if ($fillHeaders) {
-            $headers = $this->createHeadersSet ( $this->filterHeaders ( $partHeaders ) );
-            foreach ( $headers->getAll () as $header ) {
+        foreach ( $headers->getAll () as $name => $header ) {
+            if ($fillHeaders || in_array ( strtolower ( $header->getFieldName () ), $this->allowedHeaders )) {
                 $message->getHeaders ()->set ( $header );
             }
         }
+
         $this->createMessage ( $parts, $message );
 
         return $message;
@@ -70,6 +77,7 @@ class MimeParser {
         fclose ( $fp );
         return $message;
     }
+
     protected function parseParts($stream, $partHeaders) {
         $parts = array ();
         $part = 0;
@@ -150,7 +158,17 @@ class MimeParser {
                     unset ( $parts ["boundary"] );
                     $headers->addParameterizedHeader ( $name, $this->extractValueHeader ( $value ), $parts );
                     break;
-                case "to" :
+                case "return-path" :
+                    if (preg_match_all ( '/([a-z][a-z0-9_\-\.]*@[a-z0-9\.\-]*\.[a-z]{2,5})/i', $value, $mch )) {
+                        foreach ( $mch [0] as $k => $mails ) {
+                            $headers->addPathHeader ( $name,  $mch [1] [$k] );
+                        }
+                    }
+                break;
+                case "date":
+                    $headers->addDateHeader ( $name,  strtotime($value) );
+
+                case "to":
                 case "from" :
                 case "bcc" :
                 case "reply-to" :
@@ -178,7 +196,7 @@ class MimeParser {
         }
         return $headers;
     }
-    protected function createMessage(array $message,\Swift_Mime_SimpleMimeEntity $entity) {
+    protected function createMessage(array $message, \Swift_Mime_SimpleMimeEntity $entity) {
         if (stripos ( $message ["type"], 'multipart/' ) !== false) {
 
             if (strpos ( $message ["type"], '/alternative' )) {
@@ -286,11 +304,8 @@ class MimeParser {
     }
     private function filterHeaders(array $headers) {
         foreach ( $headers as $header => $values ) {
-            foreach ( $this->removeHeaders as $reg ) {
-                if (strtolower ( $reg ) == strtolower ( $header )) {
-                    unset ( $headers [$header] );
-                    continue;
-                }
+            if(in_array(strtolower ( $header ), $this->removeHeaders) && !in_array(strtolower ( $header ), $this->allowedHeaders)){
+                unset ( $headers [$header] );
             }
         }
         return $headers;
