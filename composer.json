@@ -15,7 +15,7 @@
         "swiftmailer/swiftmailer": ">3.0"
     },
     "autoload": {
-        "psr-0": { "Goetas\\Mail\\ToSwiftMialParser": "lib/" }
+        "psr-0": { "Goetas\\Mail\\ToSwiftMailParser": "lib/" }
     },
     "extra":{
         "branch-alias": {
