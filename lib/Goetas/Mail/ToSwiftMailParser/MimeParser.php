@@ -25,10 +25,10 @@ class MimeParser {
      *
      * @param stream $stream
      * @param boolean $fillHeaders (default to false)
-     * @param \Swift_Mime_SimpleMimeEntity $message (default to null)
-     * @return Swift_Mime_SimpleMimeEntity|\Swift_Message
+     * @param \Swift_Mime_MimeEntity $message (default to null)
+     * @return Swift_Mime_MimeEntity|\Swift_Message
      */
-    public function parseStream($stream, $fillHeaders = false,  \Swift_Mime_SimpleMimeEntity $message = null) {
+    public function parseStream($stream, $fillHeaders = false,  \Swift_Mime_MimeEntity $message = null) {
         $partHeaders = $this->extractHeaders ( $stream );
 
 
@@ -167,7 +167,6 @@ class MimeParser {
                 break;
                 case "date":
                     $headers->addDateHeader ( $name,  strtotime($value) );
-
                 case "to":
                 case "from" :
                 case "bcc" :
@@ -196,7 +195,7 @@ class MimeParser {
         }
         return $headers;
     }
-    protected function createMessage(array $message, \Swift_Mime_SimpleMimeEntity $entity) {
+    protected function createMessage(array $message, \Swift_Mime_MimeEntity $entity) {
         if (stripos ( $message ["type"], 'multipart/' ) !== false) {
 
             if (strpos ( $message ["type"], '/alternative' )) {
