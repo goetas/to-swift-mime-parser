@@ -31,10 +31,10 @@ class MimeParser {
     public function parseStream($stream, $fillHeaders = false,  \Swift_Mime_MimeEntity $message = null) {
         $partHeaders = $this->extractHeaders ( $stream );
 
-
         $filteredHeaders = $this->filterHeaders ( $partHeaders );
 
         $parts = $this->parseParts ( $stream, $partHeaders );
+
         if(!$message){
             $message = new \Swift_Message ();
         }
@@ -46,7 +46,6 @@ class MimeParser {
                 $message->getHeaders ()->set ( $header );
             }
         }
-
         $this->createMessage ( $parts, $message );
 
         return $message;
@@ -265,11 +264,11 @@ class MimeParser {
             $row = fgets ( $stream );
 
             if ($boundary !== null) {
-                if ($row == "--$boundary\r\n" || $row == "--$boundary\n" || $row == "--$boundary\r") {
-                    throw new Exception\EndOfPartReachedException ( $this->contentDecoder->decode ( implode ( "", $rows ), $encoding ) );
+                if(strpos($row, "--$boundary--")===0){
+                	throw new Exception\EndOfMultiPartReachedException ( $this->contentDecoder->decode ( implode ( "", $rows ), $encoding ) );
                 }
-                if ($row == "--$boundary--\r\n" || $row == "--$boundary--\n" || $row == "--$boundary--\r") {
-                    throw new Exception\EndOfMultiPartReachedException ( $this->contentDecoder->decode ( implode ( "", $rows ), $encoding ) );
+                if(strpos($row, "--$boundary")===0){
+                	throw new Exception\EndOfPartReachedException ( $this->contentDecoder->decode ( implode ( "", $rows ), $encoding ) );
                 }
             }
             $rows [] = $row;
