@@ -250,7 +250,7 @@ class MimeParser {
 
             $p = array ();
             foreach ( $parts as $pv ) {
-                list ( $k, $v ) = explode ( "=", trim ( $pv ) );
+                list ( $k, $v ) = explode ( "=", trim ( $pv ), 2 );
                 $p [$k] = trim ( $v, '"' );
             }
             return $p;
