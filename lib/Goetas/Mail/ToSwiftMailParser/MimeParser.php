@@ -80,10 +80,10 @@ class MimeParser {
     protected function parseParts($stream, $partHeaders) {
         $parts = array ();
         $part = 0;
-        $contentType = $this->extractValueHeader ( $partHeaders ["content-type"] );
+        $contentType = array_key_exists( 'content-type', $partHeaders ) ? $this->extractValueHeader ( $partHeaders ['content-type'] ) : '';
 
         if (stripos ( $contentType, 'multipart/' ) !== false) {
-            $headerParts = $this->extractHeaderParts ( $partHeaders ["content-type"] );
+            $headerParts = $this->extractHeaderParts ( $contentType );
             $boundary = $headerParts ["boundary"];
         } else {
             $boundary = null;
@@ -91,7 +91,8 @@ class MimeParser {
 
         try {
             // body
-            $this->extractPart ( $stream, $boundary, $partHeaders ["content-transfer-encoding"] );
+            $transferEncoding = array_key_exists( 'content-transfer-encoding',  $partHeaders ) ? $partHeaders ['content-transfer-encoding'] : '';
+            $this->extractPart ( $stream, $boundary, $transferEncoding );
         } catch ( Exception\EndOfPartReachedException $e ) {
             $parts = array ("type" => $contentType,"headers" => $partHeaders,"body" => $e->getData (),"boundary" => $boundary,"parts" => array ());
         }
