@@ -80,10 +80,11 @@ class MimeParser {
     protected function parseParts($stream, $partHeaders) {
         $parts = array ();
         $part = 0;
-        $contentType = array_key_exists( 'content-type', $partHeaders ) ? $this->extractValueHeader ( $partHeaders ['content-type'] ) : '';
+        $contentTypeHeader = array_key_exists( 'content-type', $partHeaders ) ? $partHeaders ['content-type']  : '';
+        $contentType =  $this->extractValueHeader( $contentTypeHeader );
 
         if (stripos ( $contentType, 'multipart/' ) !== false) {
-            $headerParts = $this->extractHeaderParts ( $contentType );
+            $headerParts = $this->extractHeaderParts ( $contentTypeHeader );
             $boundary = $headerParts ["boundary"];
         } else {
             $boundary = null;
