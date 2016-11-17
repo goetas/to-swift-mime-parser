@@ -2,5 +2,6 @@
 
 namespace Goetas\Mail\ToSwiftMailParser\Exception;
 
-class EndOfMultiPartReachedException extends EndOfPartReachedException {
+class EndOfMultiPartReachedException extends EndOfPartReachedException
+{
 }
