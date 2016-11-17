@@ -82,7 +82,7 @@ class MimeParser
                 }
                 $row = $mch [2];
             }
-            if (!empty($hName)) {
+            if (empty($hName)) {
                 continue;
             }
             $headers [$hName] [] = trim($row);
