@@ -33,7 +33,7 @@ class MimeParser
      */
     public function parseString($string)
     {
-        $fp = tmpfile();
+        $fp = fopen("php://memory", "wb");
         fwrite($fp, $string);
         rewind($fp);
         $message = $this->parseStream($fp);
@@ -112,7 +112,6 @@ class MimeParser
     protected function parseParts($stream, $partHeaders)
     {
         $parts = array();
-        $part = 0;
         $contentType = $this->extractValueHeader($this->getContentType($partHeaders));
 
         if (stripos($contentType, 'multipart/') !== false) {
@@ -126,7 +125,13 @@ class MimeParser
             // body
             $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
         } catch (Exception\EndOfPartReachedException $e) {
-            $parts = array("type" => $contentType, "headers" => $partHeaders, "body" => $e->getData(), "boundary" => $boundary, "parts" => array());
+            $parts = array(
+                "type" => $contentType,
+                "headers" => $partHeaders,
+                "body" => $e->getData(),
+                "boundary" => $boundary,
+                "parts" => array()
+            );
         }
 
         if ($boundary) {
@@ -145,7 +150,13 @@ class MimeParser
                         $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
                     }
                 } catch (Exception\EndOfPartReachedException $e) {
-                    $parts ["parts"] [] = array("type" => $childContentType, "parent-type" => $contentType, "headers" => $partHeaders, "body" => $e->getData(), "parts" => array());
+                    $parts ["parts"] [] = array(
+                        "type" => $childContentType,
+                        "parent-type" => $contentType,
+                        "headers" => $partHeaders,
+                        "body" => $e->getData(),
+                        "parts" => array()
+                    );
 
                     if ($e instanceof Exception\EndOfMultiPartReachedException) {
                         break;
@@ -177,14 +188,15 @@ class MimeParser
 
     private function extractHeaderParts($header)
     {
-        $pos = stripos($header, ';');
-        if ($pos !== false) {
+        if (stripos($header, ';') !== false) {
 
             $parts = explode(";", $header);
             array_shift($parts);
-
             $p = array();
             foreach ($parts as $pv) {
+                if (!trim($pv)) {
+                    continue;
+                }
                 list ($k, $v) = explode("=", trim($pv), 2);
                 $p [$k] = trim($v, '"');
             }
@@ -256,14 +268,14 @@ class MimeParser
                     if (preg_match_all('/(.*?)<([a-z][a-z0-9_\-\.]*@[a-z0-9\.\-]*\.[a-z]{2,5})>\s*[;,]*/i', $value, $mch)) {
                         foreach ($mch [0] as $k => $mail) {
                             if (!$mch [1] [$k]) {
-                                $adresses [$mch [2] [$k]] = $mch [2] [$k];
+                                $adresses [$mch [2] [$k]] = trim($mch [2] [$k]);
                             } else {
-                                $adresses [$mch [2] [$k]] = $mch [1] [$k];
+                                $adresses [$mch [2] [$k]] = trim($mch [1] [$k]);
                             }
                         }
                     } elseif (preg_match_all('/([a-z][a-z0-9_\-\.]*@[a-z0-9\.\-]*\.[a-z]{2,5})/i', $value, $mch)) {
                         foreach ($mch [0] as $k => $mails) {
-                            $adresses [$mch [1] [$k]] = $mch [1] [$k];
+                            $adresses [$mch [1] [$k]] = trim($mch [1] [$k]);
                         }
                     }
                     $headers->addMailboxHeader($name, $adresses);
