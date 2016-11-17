@@ -82,7 +82,7 @@ class MimeParser
                 }
                 $row = $mch [2];
             }
-            if (!$hName) {
+            if (!empty($hName)) {
                 continue;
             }
             $headers [$hName] [] = trim($row);
@@ -199,7 +199,6 @@ class MimeParser
             return array();
         }
     }
-
     protected function extractPart($stream, $boundary, $encoding)
     {
         $rows = array();
@@ -239,7 +238,7 @@ class MimeParser
 
         foreach ($headersRaw as $name => $value) {
             switch (strtolower($name)) {
-                case "content-type" :
+                case "content-type":
                     $parts = $this->extractHeaderParts($value);
                     unset ($parts ["boundary"]);
                     $headers->addParameterizedHeader($name, $this->extractValueHeader($value), $parts);
@@ -253,11 +252,12 @@ class MimeParser
                     break;
                 case "date":
                     $headers->addDateHeader($name, strtotime($value));
+                    break;
                 case "to":
-                case "from" :
+                case "from":
                 case "bcc" :
-                case "reply-to" :
-                case "cc" :
+                case "reply-to":
+                case "cc":
                     $adresses = array();
                     if (preg_match_all('/(.*?)<([a-z][a-z0-9_\-\.]*@[a-z0-9\.\-]*\.[a-z]{2,5})>\s*[;,]*/i', $value, $mch)) {
                         foreach ($mch [0] as $k => $mail) {
@@ -274,7 +274,7 @@ class MimeParser
                     }
                     $headers->addMailboxHeader($name, $adresses);
                     break;
-                default :
+                default:
                     $headers->addTextHeader($name, $value);
                     break;
             }
