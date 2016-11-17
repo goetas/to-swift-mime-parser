@@ -352,10 +352,10 @@ class MimeParser
      *            The file containg a MIME message
      * @return \Swift_Message
      */
-    public function parseFile($path)
+    public function parseFile($path, $fillHeaders = false, \Swift_Mime_MimeEntity $message = null)
     {
         $fp = fopen($path, "rb");
-        $message = $this->parseStream($fp);
+        $message = $this->parseStream($fp, $fillHeaders, $message);
         fclose($fp);
         return $message;
     }
