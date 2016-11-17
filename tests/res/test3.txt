@@ -1,0 +1,7 @@
+From: John Smith <john@example.com>
+MIME-Version: 1.0
+Subject: My simple message
+Content-Type: text/plain
+content-transfer-encoding: base64
+
+dGhpcyBpcyB0aGUgYm9keSB0ZXh0

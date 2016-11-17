@@ -1,0 +1,5 @@
+From: John Smith <john@example.com>
+Subject: My simple message
+Content-Type: text/plain
+
+this is the body text

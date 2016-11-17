@@ -25,18 +25,12 @@ class MimeParser
         $this->removeHeaders = array_merge($this->removeHeaders, $removeHeaders);
     }
 
-    /**
-     *
-     * @param string $string
-     *            The message
-     * @return \Swift_Message
-     */
-    public function parseString($string)
+    public function parseString($string, $fillHeaders = false, \Swift_Mime_MimeEntity $message = null)
     {
         $fp = fopen("php://memory", "wb");
         fwrite($fp, $string);
         rewind($fp);
-        $message = $this->parseStream($fp);
+        $message = $this->parseStream($fp, $fillHeaders, $message);
         fclose($fp);
         return $message;
     }
