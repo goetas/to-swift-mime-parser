@@ -1,5 +1,7 @@
 From: John Smith <john@example.com>
+Return-Path: john@example.com
 Subject: My simple message
 Content-Type: text/plain
+Date: Wed, 16 Nov 2016 19:22:43 +0000
 
 this is the body text

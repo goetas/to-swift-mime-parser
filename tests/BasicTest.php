@@ -45,6 +45,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals("My simple message", $mail->getSubject());
         $this->assertEquals("text/plain", $mail->getContentType());
         $this->assertEquals("this is the body text\n", $mail->getBody());
+        $this->assertEquals("john@example.com", $mail->getReturnPath());
 
         $this->assertCount(0, $mail->getChildren());
     }
