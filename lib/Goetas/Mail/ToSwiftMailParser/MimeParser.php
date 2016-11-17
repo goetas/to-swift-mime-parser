@@ -80,11 +80,10 @@ class MimeParser {
     protected function parseParts($stream, $partHeaders) {
         $parts = array ();
         $part = 0;
-        $contentTypeHeader = array_key_exists( 'content-type', $partHeaders ) ? $partHeaders ['content-type']  : '';
-        $contentType =  $this->extractValueHeader( $contentTypeHeader );
+        $contentType =  $this->extractValueHeader( $this->getContentType($partHeaders) );
 
         if (stripos ( $contentType, 'multipart/' ) !== false) {
-            $headerParts = $this->extractHeaderParts ( $contentTypeHeader );
+            $headerParts = $this->extractHeaderParts ( $this->getContentType($partHeaders) );
             $boundary = $headerParts ["boundary"];
         } else {
             $boundary = null;
@@ -101,7 +100,7 @@ class MimeParser {
             while ( ! feof ( $stream ) ) {
                 try {
                     $partHeaders = $this->extractHeaders ( $stream );
-                    $childContentType = $this->extractValueHeader ( $partHeaders ["content-type"] );
+                    $childContentType = $this->extractValueHeader ( $this->getContentType($partHeaders) );
 
                     if (stripos ( $childContentType, 'multipart/' ) !== false) {
                         $parts ["parts"] [] = $this->parseParts ( $stream, $partHeaders );
@@ -121,6 +120,15 @@ class MimeParser {
             }
         }
         return $parts;
+    }
+
+    private function getContentType(array $partHeaders)
+    {
+        if (array_key_exists('content-type', $partHeaders)) {
+            return $partHeaders['content-type'];
+        }
+
+        return '';
     }
 
     private function getTransferEncoding(array $partHeaders)
