@@ -1,5 +1,9 @@
-From: John Doe <example@example.com>
+From: John Smith <john@example.com>
 MIME-Version: 1.0
+Subject: My first message
+To: Mark Smith <mark@example.com>
+Bcc: Anna Smith <anna@example.com>
+Cc: Luis Smith <luis@example.com>
 Content-Type: multipart/mixed;
         boundary="XXXXboundary text"
 
