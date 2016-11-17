@@ -11,7 +11,7 @@
         }
     ],
     "require": {
-        "php": ">=5.3.2",
+        "php": "^5.3.2|^7.0",
         "swiftmailer/swiftmailer": "^4.0|^5.0"
     },
     "require-dev": {
