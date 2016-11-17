@@ -8,10 +8,10 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
     protected function assertionsTest1($mail)
     {
-        $this->assertEquals(['john@example.com' => 'John Smith'], $mail->getFrom());
-        $this->assertEquals(['mark@example.com' => 'Mark Smith'], $mail->getTo());
-        $this->assertEquals(['anna@example.com' => 'Anna Smith'], $mail->getBcc());
-        $this->assertEquals(['luis@example.com' => 'Luis Smith'], $mail->getCc());
+        $this->assertEquals(array('john@example.com' => 'John Smith'), $mail->getFrom());
+        $this->assertEquals(array('mark@example.com' => 'Mark Smith'), $mail->getTo());
+        $this->assertEquals(array('anna@example.com' => 'Anna Smith'), $mail->getBcc());
+        $this->assertEquals(array('luis@example.com' => 'Luis Smith'), $mail->getCc());
         $this->assertEquals("Проверка", $mail->getSubject());
 
         $this->assertEquals("multipart/mixed", $mail->getContentType());
@@ -70,7 +70,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
         $mail = $parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
 
-        $this->assertEquals(['john@example.com' => 'John Smith'], $mail->getFrom());
+        $this->assertEquals(array('john@example.com' => 'John Smith'), $mail->getFrom());
         $this->assertEquals("My simple message", $mail->getSubject());
         $this->assertEquals("text/plain", $mail->getContentType());
         $this->assertEquals("this is the body text\n", $mail->getBody());
@@ -88,7 +88,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
         $mail = $parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
 
-        $this->assertEquals(['john@example.com' => 'John Smith'], $mail->getFrom());
+        $this->assertEquals(array('john@example.com' => 'John Smith'), $mail->getFrom());
         $this->assertEquals("My simple message", $mail->getSubject());
         $this->assertEquals("text/plain", $mail->getContentType());
         $this->assertEquals("this is the body text", $mail->getBody());
