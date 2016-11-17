@@ -9,7 +9,7 @@ Installing (composer)
 Add following lines on your **composer.json**
 ```
 "requre":{
-    "goetas/to-swift-mime-parser": "1.0.*@dev"
+    "goetas/to-swift-mime-parser": "^1.0"
 }
 ```
 
@@ -18,7 +18,7 @@ Usage
 --------------------
 
 ```php
-$parser = new \Goetas\Mail\ToSwiftMailParser\MimeParser\MimeParser();
+$parser = new \Goetas\Mail\ToSwiftMailParser\MimeParser();
 
 // read a mail message saved into eml format (or similar)
 $inputStream = fopen('mail.eml', 'rb');
