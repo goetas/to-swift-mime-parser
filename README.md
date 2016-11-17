@@ -3,6 +3,12 @@ to-swift-mime-parser
 
 Parse a generic mail stream, and convert it to a SwiftMailer Message
 
+
+[![Build Status](https://travis-ci.org/goetas/to-swift-mime-parser.svg?branch=master)](https://travis-ci.org/goetas/to-swift-mime-parser)
+[![Code Coverage](https://scrutinizer-ci.com/g/goetas/to-swift-mime-parser/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/goetas/to-swift-mime-parser/?branch=master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/goetas/to-swift-mime-parser/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/goetas/to-swift-mime-parser/?branch=master)
+
+
 Installing (composer)
 --------------------
 
