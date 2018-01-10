@@ -265,7 +265,7 @@ class MimeParser
                     }
                     break;
                 case "date":
-                    $headers->addDateHeader($name, strtotime($value));
+                    $headers->addDateHeader($name, new \DateTime($value));
                     break;
                 case "to":
                 case "from":
