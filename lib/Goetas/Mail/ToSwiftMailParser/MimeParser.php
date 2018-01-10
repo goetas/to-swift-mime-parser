@@ -3,7 +3,6 @@
 namespace Goetas\Mail\ToSwiftMailParser;
 
 use Goetas\Mail\ToSwiftMailParser\Mime\ContentDecoder;
-use Goetas\Mail\ToSwiftMailParser\Mime\Grammar;
 use Goetas\Mail\ToSwiftMailParser\Mime\HeaderDecoder;
 
 class MimeParser
