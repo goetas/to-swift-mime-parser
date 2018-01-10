@@ -3,10 +3,13 @@
 namespace Goetas\Mail\ToSwiftMailParser;
 
 use Goetas\Mail\ToSwiftMailParser\Mime\ContentDecoder;
+use Goetas\Mail\ToSwiftMailParser\Mime\Grammar;
 use Goetas\Mail\ToSwiftMailParser\Mime\HeaderDecoder;
 
 class MimeParser
 {
+    const SWIFT_CONTAINER_GRAMMAR_KEY = 'mime.grammar';
+
     protected $removeHeaders = array("Received", "From", "X-Original-To", "MIME-Version", "Received-SPF", "Delivered-To");
     protected $allowedHeaders = array("return-path", "subject");
     private $cache;
@@ -17,12 +20,23 @@ class MimeParser
     public function __construct(array $allowedHeaders = array(), array $removeHeaders = array())
     {
         $this->cache = \Swift_DependencyContainer::getInstance()->lookup('cache');
-        $this->grammar = \Swift_DependencyContainer::getInstance()->lookup('mime.grammar');
+        $this->grammar = $this->getGrammarInstance();
         $this->contentDecoder = new ContentDecoder ();
         $this->headerDecoder = new HeaderDecoder ();
 
         $this->allowedHeaders = array_merge($this->allowedHeaders, $allowedHeaders);
         $this->removeHeaders = array_merge($this->removeHeaders, $removeHeaders);
+    }
+
+    private function getGrammarInstance()
+    {
+        $swiftContainer = \Swift_DependencyContainer::getInstance();
+        if ($swiftContainer->has(static::SWIFT_CONTAINER_GRAMMAR_KEY)) {
+            return $swiftContainer->lookup(static::SWIFT_CONTAINER_GRAMMAR_KEY);
+        }
+
+        // Swift does not have it, so use our own copy
+        return new Grammar();
     }
 
     public function parseString($string, $fillHeaders = false, \Swift_Mime_MimeEntity $message = null)
