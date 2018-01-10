@@ -39,7 +39,7 @@ class MimeParser
         return new Grammar();
     }
 
-    public function parseString($string, $fillHeaders = false, \Swift_Mime_MimeEntity $message = null)
+    public function parseString($string, $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null)
     {
         $fp = fopen("php://memory", "wb");
         fwrite($fp, $string);
@@ -53,10 +53,10 @@ class MimeParser
      *
      * @param stream $stream
      * @param boolean $fillHeaders (default to false)
-     * @param \Swift_Mime_MimeEntity $message (default to null)
-     * @return Swift_Mime_MimeEntity|\Swift_Message
+     * @param \Swift_Mime_SimpleMimeEntity $message (default to null)
+     * @return Swift_Mime_SimpleMimeEntity|\Swift_Message
      */
-    public function parseStream($stream, $fillHeaders = false, \Swift_Mime_MimeEntity $message = null)
+    public function parseStream($stream, $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null)
     {
         $partHeaders = $this->extractHeaders($stream);
 
@@ -296,16 +296,16 @@ class MimeParser
         return $headers;
     }
 
-    protected function createMessage(array $message, \Swift_Mime_MimeEntity $entity)
+    protected function createMessage(array $message, \Swift_Mime_SimpleMimeEntity $entity)
     {
         if (stripos($message ["type"], 'multipart/') !== false) {
 
             if (strpos($message ["type"], '/alternative')) {
-                $nestingLevel = \Swift_Mime_MimeEntity::LEVEL_ALTERNATIVE;
+                $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_ALTERNATIVE;
             } elseif (strpos($message ["type"], '/related')) {
-                $nestingLevel = \Swift_Mime_MimeEntity::LEVEL_RELATED;
+                $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_RELATED;
             } elseif (strpos($message ["type"], '/mixed')) {
-                $nestingLevel = \Swift_Mime_MimeEntity::LEVEL_MIXED;
+                $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_MIXED;
             }
 
             $childrens = array();
@@ -366,7 +366,7 @@ class MimeParser
      *            The file containg a MIME message
      * @return \Swift_Message
      */
-    public function parseFile($path, $fillHeaders = false, \Swift_Mime_MimeEntity $message = null)
+    public function parseFile($path, $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null)
     {
         $fp = fopen($path, "rb");
         $message = $this->parseStream($fp, $fillHeaders, $message);
