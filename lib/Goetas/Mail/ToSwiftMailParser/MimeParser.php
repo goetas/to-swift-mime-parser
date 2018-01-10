@@ -9,18 +9,19 @@ use Goetas\Mail\ToSwiftMailParser\Mime\HeaderDecoder;
 class MimeParser
 {
     const SWIFT_CONTAINER_GRAMMAR_KEY = 'mime.grammar';
+    const SWIFT_CONTAINER_ID_GENERATOR_KEY = 'mime.idgenerator';
 
     protected $removeHeaders = array("Received", "From", "X-Original-To", "MIME-Version", "Received-SPF", "Delivered-To");
     protected $allowedHeaders = array("return-path", "subject");
     private $cache;
-    private $grammar;
+    private $idGenerator;
     private $contentDecoder;
     private $headerDecoder;
 
     public function __construct(array $allowedHeaders = array(), array $removeHeaders = array())
     {
         $this->cache = \Swift_DependencyContainer::getInstance()->lookup('cache');
-        $this->grammar = $this->getGrammarInstance();
+        $this->getIdGenerator();
         $this->contentDecoder = new ContentDecoder ();
         $this->headerDecoder = new HeaderDecoder ();
 
@@ -28,15 +29,15 @@ class MimeParser
         $this->removeHeaders = array_merge($this->removeHeaders, $removeHeaders);
     }
 
-    private function getGrammarInstance()
+    private function getIdGenerator()
     {
         $swiftContainer = \Swift_DependencyContainer::getInstance();
         if ($swiftContainer->has(static::SWIFT_CONTAINER_GRAMMAR_KEY)) {
-            return $swiftContainer->lookup(static::SWIFT_CONTAINER_GRAMMAR_KEY);
+            $this->idGenerator = $swiftContainer->lookup(static::SWIFT_CONTAINER_GRAMMAR_KEY);
+            return;
         }
 
-        // Swift does not have it, so use our own copy
-        return new Grammar();
+        $this->idGenerator = $swiftContainer->lookup(static::SWIFT_CONTAINER_ID_GENERATOR_KEY);
     }
 
     public function parseString($string, $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null)
@@ -315,9 +316,9 @@ class MimeParser
                 $encoder = $this->getEncoder($this->getTransferEncoding($part ["headers"]));
 
                 if (stripos($part ["type"], 'multipart/') !== false) {
-                    $newEntity = new \Swift_Mime_MimePart ($headers, $encoder, $this->cache, $this->grammar);
+                    $newEntity = new \Swift_Mime_MimePart ($headers, $encoder, $this->cache, $this->idGenerator);
                 } else {
-                    $newEntity = new \Swift_Mime_SimpleMimeEntity ($headers, $encoder, $this->cache, $this->grammar);
+                    $newEntity = new \Swift_Mime_SimpleMimeEntity ($headers, $encoder, $this->cache, $this->idGenerator);
                 }
 
                 $this->createMessage($part, $newEntity);
