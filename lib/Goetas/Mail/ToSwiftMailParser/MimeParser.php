@@ -8,7 +8,7 @@ use Goetas\Mail\ToSwiftMailParser\Mime\HeaderDecoder;
 
 class MimeParser
 {
-    const SWIFT_CONTAINER_GRAMMAR_KEY = 'mime.grammar';
+    const SWIFT_CONTAINER_CACHE_KEY = 'cache';
     const SWIFT_CONTAINER_ID_GENERATOR_KEY = 'mime.idgenerator';
 
     protected $removeHeaders = array("Received", "From", "X-Original-To", "MIME-Version", "Received-SPF", "Delivered-To");
@@ -20,24 +20,14 @@ class MimeParser
 
     public function __construct(array $allowedHeaders = array(), array $removeHeaders = array())
     {
-        $this->cache = \Swift_DependencyContainer::getInstance()->lookup('cache');
-        $this->getIdGenerator();
+        $swiftContainer = \Swift_DependencyContainer::getInstance();
+        $this->cache = $swiftContainer->lookup(static::SWIFT_CONTAINER_CACHE_KEY);
+        $this->idGenerator = $swiftContainer->lookup(static::SWIFT_CONTAINER_ID_GENERATOR_KEY);
         $this->contentDecoder = new ContentDecoder ();
         $this->headerDecoder = new HeaderDecoder ();
 
         $this->allowedHeaders = array_merge($this->allowedHeaders, $allowedHeaders);
         $this->removeHeaders = array_merge($this->removeHeaders, $removeHeaders);
-    }
-
-    private function getIdGenerator()
-    {
-        $swiftContainer = \Swift_DependencyContainer::getInstance();
-        if ($swiftContainer->has(static::SWIFT_CONTAINER_GRAMMAR_KEY)) {
-            $this->idGenerator = $swiftContainer->lookup(static::SWIFT_CONTAINER_GRAMMAR_KEY);
-            return;
-        }
-
-        $this->idGenerator = $swiftContainer->lookup(static::SWIFT_CONTAINER_ID_GENERATOR_KEY);
     }
 
     public function parseString($string, $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null)
@@ -324,7 +314,7 @@ class MimeParser
                 $this->createMessage($part, $newEntity);
 
                 $ref = new \ReflectionObject ($newEntity);
-                $m = $ref->getMethod('_setNestingLevel');
+                $m = $ref->getMethod('setNestingLevel');
                 $m->setAccessible(true);
                 $m->invoke($newEntity, $nestingLevel);
 
