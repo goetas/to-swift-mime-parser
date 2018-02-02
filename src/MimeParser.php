@@ -366,16 +366,13 @@ class MimeParser
         switch ($type) {
             case "base64" :
                 return \Swift_DependencyContainer::getInstance()->lookup('mime.base64contentencoder');
-                break;
             case "8bit" :
                 return \Swift_DependencyContainer::getInstance()->lookup('mime.8bitcontentencoder');
-                break;
             case "7bit" :
                 return \Swift_DependencyContainer::getInstance()->lookup('mime.7bitcontentencoder');
                 break;
             default :
                 return \Swift_DependencyContainer::getInstance()->lookup('mime.qpcontentencoder');
-                break;
         }
     }
 }
