@@ -78,7 +78,7 @@ class MimeParser
     }
 
     /**
-     * @param stream $stream
+     * @param resource $stream
      */
     public function parseStream($stream, bool $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null): \Swift_Mime_SimpleMimeEntity
     {
