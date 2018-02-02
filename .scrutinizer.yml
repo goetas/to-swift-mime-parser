@@ -9,4 +9,4 @@ checks:
 
 filter:
     paths:
-        - lib/*
+        - src/*
