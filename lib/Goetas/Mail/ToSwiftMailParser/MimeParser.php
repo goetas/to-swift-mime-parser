@@ -7,17 +7,28 @@ use Goetas\Mail\ToSwiftMailParser\Mime\HeaderDecoder;
 
 class MimeParser
 {
+    private const SWIFT_CONTAINER_CACHE_KEY = 'cache';
+    private const SWIFT_CONTAINER_ID_GENERATOR_KEY = 'mime.idgenerator';
+
     protected $removeHeaders = array("Received", "From", "X-Original-To", "MIME-Version", "Received-SPF", "Delivered-To");
     protected $allowedHeaders = array("return-path", "subject");
-    private $cache;
-    private $grammar;
+    /**
+     * @var ContentDecoder
+     */
     private $contentDecoder;
+
+    /**
+     * @var HeaderDecoder
+     */
     private $headerDecoder;
+
+    /**
+     * @var \Swift_DependencyContainer
+     */
+    private $swiftContainer;
 
     public function __construct(array $allowedHeaders = array(), array $removeHeaders = array())
     {
-        $this->cache = \Swift_DependencyContainer::getInstance()->lookup('cache');
-        $this->grammar = \Swift_DependencyContainer::getInstance()->lookup('mime.grammar');
         $this->contentDecoder = new ContentDecoder ();
         $this->headerDecoder = new HeaderDecoder ();
 
@@ -25,7 +36,38 @@ class MimeParser
         $this->removeHeaders = array_merge($this->removeHeaders, $removeHeaders);
     }
 
-    public function parseString($string, $fillHeaders = false, \Swift_Mime_MimeEntity $message = null)
+    public function setSwiftDependencyContainer(\Swift_DependencyContainer $swiftContainer)
+    {
+        $this->swiftContainer = $swiftContainer;
+    }
+
+    private function getSwiftDependencyContainer(): \Swift_DependencyContainer
+    {
+        if ($this->swiftContainer === null) {
+            $this->swiftContainer = \Swift_DependencyContainer::getInstance();
+        }
+        return $this->swiftContainer;
+    }
+
+    private function getIdGenertor(): \Swift_IdGenerator
+    {
+        return $this->getSwiftDependencyContainer()->lookup(self::SWIFT_CONTAINER_ID_GENERATOR_KEY);
+    }
+
+    private function getCache(): \Swift_KeyCache
+    {
+        return $this->getSwiftDependencyContainer()->lookup(self::SWIFT_CONTAINER_CACHE_KEY);
+    }
+
+    public function parseFile(string $path, bool $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null): \Swift_Mime_SimpleMimeEntity
+    {
+        $fp = fopen($path, "rb");
+        $message = $this->parseStream($fp, $fillHeaders, $message);
+        fclose($fp);
+        return $message;
+    }
+
+    public function parseString(string $string, bool $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null): \Swift_Mime_SimpleMimeEntity
     {
         $fp = fopen("php://memory", "wb");
         fwrite($fp, $string);
@@ -36,13 +78,9 @@ class MimeParser
     }
 
     /**
-     *
      * @param stream $stream
-     * @param boolean $fillHeaders (default to false)
-     * @param \Swift_Mime_MimeEntity $message (default to null)
-     * @return Swift_Mime_MimeEntity|\Swift_Message
      */
-    public function parseStream($stream, $fillHeaders = false, \Swift_Mime_MimeEntity $message = null)
+    public function parseStream($stream, bool $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null): \Swift_Mime_SimpleMimeEntity
     {
         $partHeaders = $this->extractHeaders($stream);
 
@@ -66,7 +104,7 @@ class MimeParser
         return $message;
     }
 
-    protected function extractHeaders($stream)
+    protected function extractHeaders($stream): array
     {
         $headers = array();
         $hName = null;
@@ -93,7 +131,7 @@ class MimeParser
         return $headers;
     }
 
-    private function filterHeaders(array $headers)
+    private function filterHeaders(array $headers): array
     {
         foreach ($headers as $header => $values) {
             if (in_array(strtolower($header), $this->removeHeaders) && !in_array(strtolower($header), $this->allowedHeaders)) {
@@ -103,7 +141,7 @@ class MimeParser
         return $headers;
     }
 
-    protected function parseParts($stream, $partHeaders)
+    protected function parseParts($stream, array $partHeaders): array
     {
         $parts = array();
         $contentType = $this->extractValueHeader($this->getContentType($partHeaders));
@@ -161,7 +199,7 @@ class MimeParser
         return $parts;
     }
 
-    private function extractValueHeader($header)
+    private function extractValueHeader($header): string
     {
         $pos = stripos($header, ';');
         if ($pos !== false) {
@@ -171,7 +209,7 @@ class MimeParser
         }
     }
 
-    private function getContentType(array $partHeaders)
+    private function getContentType(array $partHeaders): string
     {
         if (array_key_exists('content-type', $partHeaders)) {
             return $partHeaders['content-type'];
@@ -180,7 +218,7 @@ class MimeParser
         return '';
     }
 
-    private function extractHeaderParts($header)
+    private function extractHeaderParts(string $header): array
     {
         if (stripos($header, ';') !== false) {
 
@@ -199,7 +237,12 @@ class MimeParser
             return array();
         }
     }
-    protected function extractPart($stream, $boundary, $encoding)
+
+    /**
+     * @throws Exception\EndOfMultiPartReachedException
+     * @throws Exception\EndOfPartReachedException
+     */
+    protected function extractPart($stream, ?string $boundary, string $encoding): void
     {
         $rows = array();
         while (!feof($stream)) {
@@ -207,18 +250,18 @@ class MimeParser
 
             if ($boundary !== null) {
                 if (strpos($row, "--$boundary--") === 0) {
-                    throw new Exception\EndOfMultiPartReachedException ($this->contentDecoder->decode(implode("", $rows), $encoding));
+                    throw new Exception\EndOfMultiPartReachedException($this->contentDecoder->decode(implode("", $rows), $encoding));
                 }
                 if (strpos($row, "--$boundary") === 0) {
-                    throw new Exception\EndOfPartReachedException ($this->contentDecoder->decode(implode("", $rows), $encoding));
+                    throw new Exception\EndOfPartReachedException($this->contentDecoder->decode(implode("", $rows), $encoding));
                 }
             }
             $rows [] = $row;
         }
-        throw new Exception\EndOfMultiPartReachedException ($this->contentDecoder->decode(implode("", $rows), $encoding));
+        throw new Exception\EndOfMultiPartReachedException($this->contentDecoder->decode(implode("", $rows), $encoding));
     }
 
-    private function getTransferEncoding(array $partHeaders)
+    private function getTransferEncoding(array $partHeaders): string
     {
         if (array_key_exists('content-transfer-encoding', $partHeaders)) {
             return $partHeaders ['content-transfer-encoding'];
@@ -227,12 +270,7 @@ class MimeParser
         return '';
     }
 
-    /**
-     *
-     * @param array $headersRaw
-     * @return \Swift_Mime_HeaderSet
-     */
-    protected function createHeadersSet(array $headersRaw)
+    protected function createHeadersSet(array $headersRaw): \Swift_Mime_SimpleHeaderSet
     {
         $headers = \Swift_DependencyContainer::getInstance()->lookup('mime.headerset');
 
@@ -251,7 +289,7 @@ class MimeParser
                     }
                     break;
                 case "date":
-                    $headers->addDateHeader($name, strtotime($value));
+                    $headers->addDateHeader($name, new \DateTime($value));
                     break;
                 case "to":
                 case "from":
@@ -282,53 +320,48 @@ class MimeParser
         return $headers;
     }
 
-    protected function createMessage(array $message, \Swift_Mime_MimeEntity $entity)
+    protected function createMessage(array $message, \Swift_Mime_SimpleMimeEntity $entity): void
     {
         if (stripos($message ["type"], 'multipart/') !== false) {
 
             if (strpos($message ["type"], '/alternative')) {
-                $nestingLevel = \Swift_Mime_MimeEntity::LEVEL_ALTERNATIVE;
+                $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_ALTERNATIVE;
             } elseif (strpos($message ["type"], '/related')) {
-                $nestingLevel = \Swift_Mime_MimeEntity::LEVEL_RELATED;
+                $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_RELATED;
             } elseif (strpos($message ["type"], '/mixed')) {
-                $nestingLevel = \Swift_Mime_MimeEntity::LEVEL_MIXED;
+                $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_MIXED;
             }
 
-            $childrens = array();
+            $childs = array();
             foreach ($message ["parts"] as $part) {
 
-                $headers = $this->createHeadersSet($part ["headers"]);
-                $encoder = $this->getEncoder($this->getTransferEncoding($part ["headers"]));
+                $headers = $this->createHeadersSet($part["headers"]);
+                $encoder = $this->getEncoder($this->getTransferEncoding($part["headers"]));
 
-                if (stripos($part ["type"], 'multipart/') !== false) {
-                    $newEntity = new \Swift_Mime_MimePart ($headers, $encoder, $this->cache, $this->grammar);
+                if (stripos($part["type"], 'multipart/') !== false) {
+                    $newEntity = new \Swift_Mime_MimePart ($headers, $encoder, $this->getCache(), $this->getIdGenertor());
                 } else {
-                    $newEntity = new \Swift_Mime_SimpleMimeEntity ($headers, $encoder, $this->cache, $this->grammar);
+                    $newEntity = new \Swift_Mime_SimpleMimeEntity ($headers, $encoder, $this->getCache(), $this->getIdGenertor());
                 }
 
                 $this->createMessage($part, $newEntity);
 
                 $ref = new \ReflectionObject ($newEntity);
-                $m = $ref->getMethod('_setNestingLevel');
+                $m = $ref->getMethod('setNestingLevel');
                 $m->setAccessible(true);
                 $m->invoke($newEntity, $nestingLevel);
 
-                $childrens [] = $newEntity;
+                $childs [] = $newEntity;
             }
 
-            $entity->setContentType($part ["type"]);
-            $entity->setChildren($childrens);
+            $entity->setContentType($part["type"]);
+            $entity->setChildren($childs);
         } else {
             $entity->setBody($message ["body"], $message ["type"]);
         }
     }
 
-    /**
-     *
-     * @param string $type
-     * @return \Swift_Mime_ContentEncoder
-     */
-    protected function getEncoder($type)
+    protected function getEncoder(string $type): \Swift_Mime_ContentEncoder
     {
         switch ($type) {
             case "base64" :
@@ -344,19 +377,5 @@ class MimeParser
                 return \Swift_DependencyContainer::getInstance()->lookup('mime.qpcontentencoder');
                 break;
         }
-    }
-
-    /**
-     *
-     * @param string $path
-     *            The file containg a MIME message
-     * @return \Swift_Message
-     */
-    public function parseFile($path, $fillHeaders = false, \Swift_Mime_MimeEntity $message = null)
-    {
-        $fp = fopen($path, "rb");
-        $message = $this->parseStream($fp, $fillHeaders, $message);
-        fclose($fp);
-        return $message;
     }
 }

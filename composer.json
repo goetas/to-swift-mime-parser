@@ -11,8 +11,8 @@
         }
     ],
     "require": {
-        "php": "^5.3.2|^7.0",
-        "swiftmailer/swiftmailer": "^4.2|^5.0"
+        "php": "^7.1",
+        "swiftmailer/swiftmailer": "^6.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^4.0|^5.0"

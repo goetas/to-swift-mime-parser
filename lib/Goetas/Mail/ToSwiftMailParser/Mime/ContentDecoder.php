@@ -4,7 +4,7 @@ namespace Goetas\Mail\ToSwiftMailParser\Mime;
 
 class ContentDecoder
 {
-    public function decode($string, $from)
+    public function decode(string $string, string $from): string
     {
         if ($from == "base64") {
             return base64_decode($string);
