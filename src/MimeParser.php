@@ -281,7 +281,7 @@ class MimeParser
                     unset ($parts ["boundary"]);
                     $headers->addParameterizedHeader($name, $this->extractValueHeader($value), $parts);
                     break;
-                case "return-path" :
+                case "return-path":
                     if (preg_match_all('/([a-z][a-z0-9_\-\.]*@[a-z0-9\.\-]*\.[a-z]{2,5})/i', $value, $mch)) {
                         foreach ($mch [0] as $k => $mails) {
                             $headers->addPathHeader($name, $mch [1] [$k]);
@@ -293,7 +293,7 @@ class MimeParser
                     break;
                 case "to":
                 case "from":
-                case "bcc" :
+                case "bcc":
                 case "reply-to":
                 case "cc":
                     $adresses = array();
@@ -323,7 +323,7 @@ class MimeParser
     protected function createMessage(array $message, \Swift_Mime_SimpleMimeEntity $entity): void
     {
         if (stripos($message ["type"], 'multipart/') !== false) {
-
+            $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_TOP;
             if (strpos($message ["type"], '/alternative')) {
                 $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_ALTERNATIVE;
             } elseif (strpos($message ["type"], '/related')) {
@@ -364,14 +364,13 @@ class MimeParser
     protected function getEncoder(string $type): \Swift_Mime_ContentEncoder
     {
         switch ($type) {
-            case "base64" :
+            case "base64":
                 return \Swift_DependencyContainer::getInstance()->lookup('mime.base64contentencoder');
-            case "8bit" :
+            case "8bit":
                 return \Swift_DependencyContainer::getInstance()->lookup('mime.8bitcontentencoder');
-            case "7bit" :
+            case "7bit":
                 return \Swift_DependencyContainer::getInstance()->lookup('mime.7bitcontentencoder');
-                break;
-            default :
+            default:
                 return \Swift_DependencyContainer::getInstance()->lookup('mime.qpcontentencoder');
         }
     }

@@ -6,7 +6,7 @@ class HeaderDecoder
 {
     private $decodeWindows1252 = false;
 
-    public function __construct($decodeWindows1252 = false)
+    public function __construct(bool $decodeWindows1252 = false)
     {
         $this->decodeWindows1252 = $decodeWindows1252;
     }
@@ -48,19 +48,19 @@ class HeaderDecoder
             $encoded_text = substr($string, $d2 + 1, $end - $d2 - 1);
 
             switch ($encoding) {
-                case 'Q' :
-                case 'q' :
+                case 'Q':
+                case 'q':
                     $out .= self::convertCharset(preg_replace_callback('/=([0-9a-f]{2})/i', function ($ord) {
                         return chr(hexdec($ord [1]));
                     }, str_replace('_', ' ', $encoded_text)), $orig_charset, 'UTF-8');
                     break;
 
-                case 'B' :
-                case 'b' :
+                case 'B':
+                case 'b':
                     $out .= self::convertCharset(base64_decode($encoded_text), $orig_charset, 'UTF-8');
                     break;
 
-                default :
+                default:
                     // Ignore unknown encoding.
                     break;
             }

@@ -4,7 +4,7 @@ namespace Goetas\Mail\ToSwiftMailParser\Exception;
 
 class EndOfPartReachedException extends \Exception
 {
-    protected $data = array();
+    protected $data;
 
     public function __construct(string $data)
     {
