@@ -1,7 +1,7 @@
 to-swift-mime-parser
 ====================
 
-Parse a generic mail stream, and convert it to a SwiftMailer Message
+Parse a generic mail stream, and convert it to a [SwiftMailer](https://github.com/swiftmailer/swiftmailer) Message object
 
 
 [![Build Status](https://travis-ci.org/goetas/to-swift-mime-parser.svg?branch=master)](https://travis-ci.org/goetas/to-swift-mime-parser)
@@ -12,11 +12,8 @@ Parse a generic mail stream, and convert it to a SwiftMailer Message
 Installing (composer)
 --------------------
 
-Add following lines on your **composer.json**
-```
-"requre":{
-    "goetas/to-swift-mime-parser": "^1.0"
-}
+```bash
+composer requre goetas/to-swift-mime-parser
 ```
 
 
@@ -24,6 +21,8 @@ Usage
 --------------------
 
 ```php
+<?php
+
 $parser = new \Goetas\Mail\ToSwiftMailParser\MimeParser();
 
 // read a mail message saved into eml format (or similar)
@@ -37,10 +36,14 @@ $mail->setTo("me@you.it");
 $mail->setSubject("New Subject");
 
 
-// optionaly loop through mail parts (and edit it!)
+// optionally loop through mail parts (and edit it!)
 // $mail->getChildren();
 
 // send a new mail
 $mailer->send($mail);
+
+
+
+
 
 ```
