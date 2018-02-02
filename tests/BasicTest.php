@@ -1,11 +1,11 @@
 <?php
+
 namespace Goetas\Mail\ToSwiftMailParser\Tests;
 
 use Goetas\Mail\ToSwiftMailParser\MimeParser;
 
 class BasicTest extends \PHPUnit_Framework_TestCase
 {
-
     protected function assertionsTest1($mail)
     {
         $this->assertEquals(array('john@example.com' => 'John Smith'), $mail->getFrom());
@@ -36,7 +36,6 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $mail = $parser->parseString($inputStream, true); // now $mail is a \Swift_Message  object
 
         $this->assertionsTest1($mail);
-
     }
 
     public function testParseStream()
@@ -95,8 +94,5 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
         $this->assertCount(0, $mail->getChildren());
     }
-
-
 }
-
 

@@ -4,9 +4,14 @@ namespace Goetas\Mail\ToSwiftMailParser\Mime;
 
 class HeaderDecoder
 {
-    public static $decodeWindows1252 = false;
+    private $decodeWindows1252 = false;
 
-    public function decode($string)
+    public function __construct($decodeWindows1252 = false)
+    {
+        $this->decodeWindows1252 = $decodeWindows1252;
+    }
+
+    public function decode(string $string): string
     {
         /* Take out any spaces between multiple encoded words. */
         $string = preg_replace('|\?=\s+=\?|', '?==?', $string);
@@ -24,7 +29,7 @@ class HeaderDecoder
             }
 
             $orig_charset = substr($string, $pos + 2, $d1 - $pos - 2);
-            if (self::$decodeWindows1252 && mb_strtolower($orig_charset) == 'iso-8859-1') {
+            if ($this->decodeWindows1252 && mb_strtolower($orig_charset) == 'iso-8859-1') {
                 $orig_charset = 'windows-1252';
             }
 
@@ -66,7 +71,7 @@ class HeaderDecoder
         return $out . substr($string, $old_pos);
     }
 
-    public static function convertCharset($str, $orig, $to)
+    private static function convertCharset(string $str, string $orig, string $to)
     {
         //@todo convert charset
         return $str;

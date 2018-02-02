@@ -6,13 +6,13 @@ class EndOfPartReachedException extends \Exception
 {
     protected $data = array();
 
-    public function __construct($data)
+    public function __construct(string $data)
     {
         $this->data = $data;
         parent::__construct();
     }
 
-    public function getData()
+    public function getData(): string
     {
         return $this->data;
     }

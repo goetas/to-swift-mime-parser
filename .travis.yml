@@ -6,23 +6,22 @@ cache:
     - vendor
     - $HOME/.composer/cache
 php:
-  - 7.0
   - 7.1
+  - 7.2
 
 matrix:
   include:
-    - php: 7.0
+    - php: 7.1
       env: COMPOSER_FLAGS='--prefer-lowest --prefer-stable'
 
 before_script:
-  - pecl install xmldiff
-  - echo "xdebug.max_nesting_level=1000" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-  - phpenv config-rm xdebug.ini
+  - if [[ $TRAVIS_PHP_VERSION = '7.1' ]] ; then PHPUNIT_FLAGS="--coverage-clover=coverage.clover"; else phpenv config-rm xdebug.ini; fi
   - composer self-update
   - composer update $COMPOSER_FLAGS
 
 script:
-  - vendor/bin/phpunit
+  - vendor/bin/phpunit $PHPUNIT_FLAGS
 
 after_script:
   - wget https://scrutinizer-ci.com/ocular.phar
+  - if [[ $TRAVIS_PHP_VERSION = '7.1' ]] ; then php ocular.phar code-coverage:upload --format=php-clover coverage.clover; fi
