@@ -1,0 +1,9 @@
+From: John Smith <john@example.com>
+MIME-Version: 1.0
+Subject: Hi
+To: Mark Smith <mark@example.com>
+Bcc: Anna Smith <anna@example.com>
+Cc: Luis Smith <luis@example.com>
+Content-Type: multipart/mixed;
+
+This is a multipart message in MIME format.

@@ -2,10 +2,16 @@
 
 namespace Goetas\Mail\ToSwiftMailParser\Tests;
 
+use Goetas\Mail\ToSwiftMailParser\Exception\InvalidMessageFormatException;
 use Goetas\Mail\ToSwiftMailParser\MimeParser;
 
 class BasicTest extends \PHPUnit_Framework_TestCase
 {
+    protected $parser;
+    public function setUp()
+    {
+        $this->parser = new MimeParser();
+    }
     protected function assertionsTest1($mail)
     {
         $this->assertEquals(array('john@example.com' => 'John Smith'), $mail->getFrom());
@@ -28,46 +34,38 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
     public function testParseString()
     {
-        $parser = new MimeParser();
-
         // read a mail message saved into eml format (or similar)
         $inputStream = file_get_contents(__DIR__ . '/res/test1.txt');
 
-        $mail = $parser->parseString($inputStream, true); // now $mail is a \Swift_Message  object
+        $mail = $this->parser->parseString($inputStream, true); // now $mail is a \Swift_Message  object
 
         $this->assertionsTest1($mail);
     }
 
     public function testParseStream()
     {
-        $parser = new MimeParser();
-
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/test1.txt', 'rb');
 
-        $mail = $parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
+        $mail = $this->parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
 
         $this->assertionsTest1($mail);
     }
 
     public function testParseFile()
     {
-        $parser = new MimeParser();
-
         // read a mail message saved into eml format (or similar)
-        $mail = $parser->parseFile(__DIR__ . '/res/test1.txt', true); // now $mail is a \Swift_Message  object
+        $mail = $this->parser->parseFile(__DIR__ . '/res/test1.txt', true); // now $mail is a \Swift_Message  object
 
         $this->assertionsTest1($mail);
     }
 
     public function testParse2()
     {
-        $parser = new MimeParser();
-
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/test2.txt', 'rb');
 
-        $mail = $parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
+        $mail = $this->parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
 
         $this->assertEquals(array('john@example.com' => 'John Smith'), $mail->getFrom());
         $this->assertEquals("My simple message", $mail->getSubject());
@@ -80,12 +78,10 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
     public function testParse3()
     {
-        $parser = new MimeParser();
-
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/test3.txt', 'rb');
 
-        $mail = $parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
+        $mail = $this->parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
 
         $this->assertEquals(array('john@example.com' => 'John Smith'), $mail->getFrom());
         $this->assertEquals("My simple message", $mail->getSubject());
@@ -93,6 +89,18 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals("this is the body text", $mail->getBody());
 
         $this->assertCount(0, $mail->getChildren());
+    }
+
+    /**
+     * @expectedException \Goetas\Mail\ToSwiftMailParser\Exception\InvalidMessageFormatException
+     * @expectedExceptionMessage The Content-Type header is not well formed, boundary is missing
+     */
+    public function testParseWrongBoundary()
+    {
+        // read a mail message saved into eml format (or similar)
+        $inputStream = fopen(__DIR__ . '/res/test-wrong-boundary.txt', 'rb');
+
+        $this->parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
     }
 }
 

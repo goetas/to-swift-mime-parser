@@ -2,6 +2,7 @@
 
 namespace Goetas\Mail\ToSwiftMailParser;
 
+use Goetas\Mail\ToSwiftMailParser\Exception\InvalidMessageFormatException;
 use Goetas\Mail\ToSwiftMailParser\Mime\ContentDecoder;
 use Goetas\Mail\ToSwiftMailParser\Mime\HeaderDecoder;
 
@@ -146,11 +147,13 @@ class MimeParser
         $parts = array();
         $contentType = $this->extractValueHeader($this->getContentType($partHeaders));
 
+        $boundary = null;
         if (stripos($contentType, 'multipart/') !== false) {
             $headerParts = $this->extractHeaderParts($this->getContentType($partHeaders));
-            $boundary = $headerParts ["boundary"];
-        } else {
-            $boundary = null;
+            if (empty($headerParts["boundary"])) {
+                throw new InvalidMessageFormatException("The Content-Type header is not well formed, boundary is missing");
+            }
+            $boundary = $headerParts["boundary"];
         }
 
         try {
@@ -167,13 +170,14 @@ class MimeParser
         }
 
         if ($boundary) {
+            $childContentType = null;
             while (!feof($stream)) {
                 try {
                     $partHeaders = $this->extractHeaders($stream);
                     $childContentType = $this->extractValueHeader($this->getContentType($partHeaders));
 
                     if (stripos($childContentType, 'multipart/') !== false) {
-                        $parts ["parts"] [] = $this->parseParts($stream, $partHeaders);
+                        $parts["parts"][] = $this->parseParts($stream, $partHeaders);
                         try {
                             $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
                         } catch (Exception\EndOfPartReachedException $e) {
@@ -182,7 +186,7 @@ class MimeParser
                         $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
                     }
                 } catch (Exception\EndOfPartReachedException $e) {
-                    $parts ["parts"] [] = array(
+                    $parts["parts"][] = array(
                         "type" => $childContentType,
                         "parent-type" => $contentType,
                         "headers" => $partHeaders,
@@ -322,14 +326,15 @@ class MimeParser
 
     protected function createMessage(array $message, \Swift_Mime_SimpleMimeEntity $entity): void
     {
-        if (stripos($message ["type"], 'multipart/') !== false) {
-            $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_TOP;
-            if (strpos($message ["type"], '/alternative')) {
-                $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_ALTERNATIVE;
-            } elseif (strpos($message ["type"], '/related')) {
+        if (stripos($message["type"], 'multipart/') !== false) {
+
+            if (strpos($message["type"], '/alternative')) {
+            } elseif (strpos($message["type"], '/related')) {
                 $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_RELATED;
-            } elseif (strpos($message ["type"], '/mixed')) {
+            } elseif (strpos($message["type"], '/mixed')) {
                 $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_MIXED;
+            } else {
+                $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_TOP;
             }
 
             $childs = array();
@@ -357,7 +362,7 @@ class MimeParser
             $entity->setContentType($part["type"]);
             $entity->setChildren($childs);
         } else {
-            $entity->setBody($message ["body"], $message ["type"]);
+            $entity->setBody($message ["body"], $message["type"]);
         }
     }
 
