@@ -1,0 +1,9 @@
+From: John Smith <john@example.com>
+MIME-Version: 1.0
+Subject: =?utf-8?Q?T=C3=A1ste?=
+To: =?iso-8859-1?Q?T=E1ste?=
+        <test@example.com>
+Content-Type: text/plain
+content-transfer-encoding: base64
+
+dGhpcyBpcyB0aGUgYm9keSB0ZXh0
