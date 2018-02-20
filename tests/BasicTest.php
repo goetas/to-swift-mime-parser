@@ -102,5 +102,16 @@ class BasicTest extends \PHPUnit_Framework_TestCase
 
         $this->parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
     }
+
+    public function testDifferentHeadersEncoding()
+    {
+        // read a mail message saved into eml format (or similar)
+        $inputStream = fopen(__DIR__ . '/res/test-different-headers-encoding.txt', 'rb');
+
+        $mail = $this->parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
+
+        $this->assertEquals(['test@example.com' => 'Táste'], $mail->getTo());
+        $this->assertEquals('Táste', $mail->getSubject());
+    }
 }
 
