@@ -115,19 +115,19 @@ class MimeParser
                 break;
             }
             if (preg_match('/^([a-z0-9\-]+)\s*:(.*)/i', $row, $mch)) {
-                $hName = strtolower($mch [1]);
+                $hName = strtolower($mch[1]);
                 if (!in_array($hName, array("content-type", "content-transfer-encoding"))) {
-                    $hName = $mch [1];
+                    $hName = $mch[1];
                 }
-                $row = $mch [2];
+                $row = $mch[2];
             }
             if (empty($hName)) {
                 continue;
             }
-            $headers [$hName] [] = trim($row);
+            $headers[$hName][] = trim($row);
         }
         foreach ($headers as $header => $values) {
-            $headers [$header] = $this->headerDecoder->decode(trim(implode(" ", $values)));
+            $headers[$header] = $this->headerDecoder->decode(trim(implode(" ", $values)));
         }
         return $headers;
     }
@@ -136,7 +136,7 @@ class MimeParser
     {
         foreach ($headers as $header => $values) {
             if (in_array(strtolower($header), $this->removeHeaders) && !in_array(strtolower($header), $this->allowedHeaders)) {
-                unset ($headers [$header]);
+                unset ($headers[$header]);
             }
         }
         return $headers;
@@ -230,11 +230,11 @@ class MimeParser
             array_shift($parts);
             $p = array();
             foreach ($parts as $pv) {
-                if (!trim($pv)) {
+                if (strpos($pv, '=') === false) {
                     continue;
                 }
                 list ($k, $v) = explode("=", trim($pv), 2);
-                $p [$k] = trim($v, '"');
+                $p[$k] = trim($v, '"');
             }
             return $p;
         } else {
@@ -260,7 +260,7 @@ class MimeParser
                     throw new Exception\EndOfPartReachedException($this->contentDecoder->decode(implode("", $rows), $encoding));
                 }
             }
-            $rows [] = $row;
+            $rows[] = $row;
         }
         throw new Exception\EndOfMultiPartReachedException($this->contentDecoder->decode(implode("", $rows), $encoding));
     }
@@ -268,7 +268,7 @@ class MimeParser
     private function getTransferEncoding(array $partHeaders): string
     {
         if (array_key_exists('content-transfer-encoding', $partHeaders)) {
-            return $partHeaders ['content-transfer-encoding'];
+            return $partHeaders['content-transfer-encoding'];
         }
 
         return '';
@@ -282,13 +282,13 @@ class MimeParser
             switch (strtolower($name)) {
                 case "content-type":
                     $parts = $this->extractHeaderParts($value);
-                    unset ($parts ["boundary"]);
+                    unset ($parts["boundary"]);
                     $headers->addParameterizedHeader($name, $this->extractValueHeader($value), $parts);
                     break;
                 case "return-path":
                     if (preg_match_all('/([a-z][a-z0-9_\-\.]*@[a-z0-9\.\-]*\.[a-z]{2,5})/i', $value, $mch)) {
-                        foreach ($mch [0] as $k => $mails) {
-                            $headers->addPathHeader($name, $mch [1] [$k]);
+                        foreach ($mch[0] as $k => $mails) {
+                            $headers->addPathHeader($name, $mch[1][$k]);
                         }
                     }
                     break;
@@ -302,16 +302,16 @@ class MimeParser
                 case "cc":
                     $adresses = array();
                     if (preg_match_all('/(.*?)<([a-z][a-z0-9_\-\.]*@[a-z0-9\.\-]*\.[a-z]{2,5})>\s*[;,]*/i', $value, $mch)) {
-                        foreach ($mch [0] as $k => $mail) {
-                            if (!$mch [1] [$k]) {
-                                $adresses [$mch [2] [$k]] = trim($mch [2] [$k]);
+                        foreach ($mch[0] as $k => $mail) {
+                            if (!$mch[1][$k]) {
+                                $adresses[$mch[2][$k]] = trim($mch[2][$k]);
                             } else {
-                                $adresses [$mch [2] [$k]] = trim($mch [1] [$k]);
+                                $adresses[$mch[2][$k]] = trim($mch[1][$k]);
                             }
                         }
                     } elseif (preg_match_all('/([a-z][a-z0-9_\-\.]*@[a-z0-9\.\-]*\.[a-z]{2,5})/i', $value, $mch)) {
-                        foreach ($mch [0] as $k => $mails) {
-                            $adresses [$mch [1] [$k]] = trim($mch [1] [$k]);
+                        foreach ($mch[0] as $k => $mails) {
+                            $adresses[$mch[1][$k]] = trim($mch[1][$k]);
                         }
                     }
                     $headers->addMailboxHeader($name, $adresses);
@@ -326,7 +326,7 @@ class MimeParser
 
     protected function createMessage(array $message, \Swift_Mime_SimpleMimeEntity $entity): void
     {
-        if (stripos($message["type"], 'multipart/') !== false) {
+        if (stripos($message["type"], 'multipart/') !== false && !empty($message["parts"])) {
 
             if (strpos($message["type"], '/alternative')) {
             } elseif (strpos($message["type"], '/related')) {
@@ -338,7 +338,7 @@ class MimeParser
             }
 
             $childs = array();
-            foreach ($message ["parts"] as $part) {
+            foreach ($message["parts"] as $part) {
 
                 $headers = $this->createHeadersSet($part["headers"]);
                 $encoder = $this->getEncoder($this->getTransferEncoding($part["headers"]));
@@ -356,13 +356,13 @@ class MimeParser
                 $m->setAccessible(true);
                 $m->invoke($newEntity, $nestingLevel);
 
-                $childs [] = $newEntity;
+                $childs[] = $newEntity;
             }
 
             $entity->setContentType($part["type"]);
             $entity->setChildren($childs);
         } else {
-            $entity->setBody($message ["body"], $message["type"]);
+            $entity->setBody($message["body"], $message["type"]);
         }
     }
 

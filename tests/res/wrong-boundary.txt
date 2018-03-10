@@ -1,0 +1,6 @@
+From: John Smith <john@example.com>
+MIME-Version: 1.0
+Subject: My simple message
+Content-type: multipart/mixed; boundary="XXXXboundsssary text"
+
+This is a multipart message in MIME format.
