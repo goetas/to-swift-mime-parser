@@ -141,4 +141,15 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(['test@example.com' => 'Táste'], $mail->getTo());
         $this->assertEquals('Táste', $mail->getSubject());
     }
+
+    public function testHeaderWithSemicolon()
+    {
+        $inputStream = fopen(__DIR__ . '/res/test-header-with-semicolon.txt', 'rb');
+
+        /** @var \Swift_Message $mail */
+        $mail = $this->parser->parseStream($inputStream, true);
+        $children = $mail->getChildren();
+        $this->assertCount(2, $children);
+        $this->assertEquals('attachment; filename="test;.txt"', $children[1]->getHeaders()->get('content-disposition')->getFieldBody());
+    }
 }
