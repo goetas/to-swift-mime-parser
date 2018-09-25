@@ -329,6 +329,7 @@ class MimeParser
         if (stripos($message["type"], 'multipart/') !== false && !empty($message["parts"])) {
 
             if (strpos($message["type"], '/alternative')) {
+                $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_ALTERNATIVE;
             } elseif (strpos($message["type"], '/related')) {
                 $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_RELATED;
             } elseif (strpos($message["type"], '/mixed')) {
