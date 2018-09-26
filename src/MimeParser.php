@@ -178,10 +178,6 @@ class MimeParser
 
                     if (stripos($childContentType, 'multipart/') !== false) {
                         $parts["parts"][] = $this->parseParts($stream, $partHeaders);
-                        try {
-                            $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
-                        } catch (Exception\EndOfPartReachedException $e) {
-                        }
                     } else {
                         $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
                     }
