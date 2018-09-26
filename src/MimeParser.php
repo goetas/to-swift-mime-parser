@@ -229,7 +229,20 @@ class MimeParser
             $parts = explode(";", $header);
             array_shift($parts);
             $p = array();
+            $part = '';
             foreach ($parts as $pv) {
+                if (preg_match('/="[^"]+$/', $pv)) {
+                    $part = $pv;
+                    continue;
+                }
+                if ($part !== '') {
+                    $part .= ';' . $pv;
+                    if (preg_match('/="[^"]+$/', $part)) {
+                        continue;
+                    } else {
+                        $pv = $part;
+                    }
+                }
                 if (strpos($pv, '=') === false) {
                     continue;
                 }
