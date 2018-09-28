@@ -178,10 +178,6 @@ class MimeParser
 
                     if (stripos($childContentType, 'multipart/') !== false) {
                         $parts["parts"][] = $this->parseParts($stream, $partHeaders);
-                        try {
-                            $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
-                        } catch (Exception\EndOfPartReachedException $e) {
-                        }
                     } else {
                         $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
                     }
@@ -229,20 +225,7 @@ class MimeParser
             $parts = explode(";", $header);
             array_shift($parts);
             $p = array();
-            $part = '';
             foreach ($parts as $pv) {
-                if (preg_match('/="[^"]+$/', $pv)) {
-                    $part = $pv;
-                    continue;
-                }
-                if ($part !== '') {
-                    $part .= ';' . $pv;
-                    if (preg_match('/="[^"]+$/', $part)) {
-                        continue;
-                    } else {
-                        $pv = $part;
-                    }
-                }
                 if (strpos($pv, '=') === false) {
                     continue;
                 }
