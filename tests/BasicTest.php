@@ -25,8 +25,8 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $children = $mail->getChildren();
         $this->assertCount(2, $children);
 
-        $this->assertEquals("this is the body text\n\n", $children[0]->getBody());
-        $this->assertEquals("this is the attachment text\n\n", $children[1]->getBody());
+        $this->assertEquals("this is the body text", $children[0]->getBody());
+        $this->assertEquals("this is the attachment text", $children[1]->getBody());
 
         $this->assertEquals("text/plain", $children[0]->getContentType());
         $this->assertEquals("text/plain", $children[1]->getContentType());
@@ -70,7 +70,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array('john@example.com' => 'John Smith'), $mail->getFrom());
         $this->assertEquals("My simple message", $mail->getSubject());
         $this->assertEquals("text/plain", $mail->getContentType());
-        $this->assertEquals("this is the body text\n", $mail->getBody());
+        $this->assertEquals("this is the body text", $mail->getBody());
         $this->assertEquals("john@example.com", $mail->getReturnPath());
 
         $this->assertCount(0, $mail->getChildren());

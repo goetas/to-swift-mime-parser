@@ -8,6 +8,8 @@ use Goetas\Mail\ToSwiftMailParser\Mime\HeaderDecoder;
 
 class MimeParser
 {
+    const REGEX_BOUNDARY = '~^[-]{2}(?<boundary>.*[^-]{2})(?<end>[-]{2})?$~';
+
     private const SWIFT_CONTAINER_CACHE_KEY = 'cache';
     private const SWIFT_CONTAINER_ID_GENERATOR_KEY = 'mime.idgenerator';
 
@@ -86,8 +88,15 @@ class MimeParser
         $partHeaders = $this->extractHeaders($stream);
 
         $filteredHeaders = $this->filterHeaders($partHeaders);
+        $part=array(
+            "type" => $this->extractValueHeader($this->getContentType($partHeaders)),
+            "headers" => $partHeaders,
+            "body" => '',
+            "boundary" => null,
+            "parts" => array()
+        );
 
-        $parts = $this->parseParts($stream, $partHeaders);
+        $parts = $this->parseParts($stream, $part);
 
         if (!$message) {
             $message = new \Swift_Message ();
@@ -110,10 +119,11 @@ class MimeParser
         $headers = array();
         $hName = null;
         while (!feof($stream)) {
-            $row = fgets($stream);
-            if ($row == "\r\n" || $row == "\n" || $row == "\r") {
+            $row = $this->getCurrentLine($stream,false);
+            if ($row == "") {
                 break;
             }
+            $row=$this->getCurrentLine($stream);
             if (preg_match('/^([a-z0-9\-]+)\s*:(.*)/i', $row, $mch)) {
                 $hName = strtolower($mch[1]);
                 if (!in_array($hName, array("content-type", "content-transfer-encoding"))) {
@@ -142,66 +152,67 @@ class MimeParser
         return $headers;
     }
 
-    protected function parseParts($stream, array $partHeaders): array
+    public function getCurrentLine($stream, $auto_advance=true){
+        $row=null;
+        if (!feof($stream)){
+            $pos=ftell($stream);
+            $row = fgets($stream);
+            if(!$auto_advance)
+                fseek($stream,$pos);
+        }
+        return trim($row,"\r\n");
+    }
+
+    protected function parseParts($stream, array $part): array
     {
-        $parts = array();
-        $contentType = $this->extractValueHeader($this->getContentType($partHeaders));
+        while (!feof($stream)) {
+            $line=$this->getCurrentLine($stream);
+            if (strpos($part["type"],'multipart/') !== false) {
+                $headerParts = $this->extractHeaderParts($this->getContentType($part['headers']));
+                if (empty($headerParts["boundary"])) {
+                    throw new InvalidMessageFormatException("The Content-Type header is not well formed, boundary is missing");
+                }
 
-        $boundary = null;
-        if (stripos($contentType, 'multipart/') !== false) {
-            $headerParts = $this->extractHeaderParts($this->getContentType($partHeaders));
-            if (empty($headerParts["boundary"])) {
-                throw new InvalidMessageFormatException("The Content-Type header is not well formed, boundary is missing");
-            }
-            $boundary = $headerParts["boundary"];
-        }
-
-        try {
-            // body
-            $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
-        } catch (Exception\EndOfPartReachedException $e) {
-            $parts = array(
-                "type" => $contentType,
-                "headers" => $partHeaders,
-                "body" => $e->getData(),
-                "boundary" => $boundary,
-                "parts" => array()
-            );
-        }
-
-        if ($boundary) {
-            $childContentType = null;
-            while (!feof($stream)) {
-                try {
-                    $partHeaders = $this->extractHeaders($stream);
-                    $childContentType = $this->extractValueHeader($this->getContentType($partHeaders));
-
-                    if (stripos($childContentType, 'multipart/') !== false) {
-                        $parts["parts"][] = $this->parseParts($stream, $partHeaders);
-                        try {
-                            $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
-                        } catch (Exception\EndOfPartReachedException $e) {
-                        }
-                    } else {
-                        $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
-                    }
-                } catch (Exception\EndOfPartReachedException $e) {
-                    $parts["parts"][] = array(
-                        "type" => $childContentType,
-                        "parent-type" => $contentType,
-                        "headers" => $partHeaders,
-                        "body" => $e->getData(),
-                        "parts" => array()
-                    );
-
-                    if ($e instanceof Exception\EndOfMultiPartReachedException) {
+                if (preg_match(self::REGEX_BOUNDARY, $line, $matches)) {
+                    if (array_key_exists('end', $matches)) {
                         break;
                     }
+                    $child_headers = $this->extractHeaders($stream);
+                    $child_parts = array(
+                        "type" => $this->extractValueHeader($this->getContentType($child_headers)),
+                        "headers" => $child_headers,
+                        "body" => '',
+                        "boundary" => null,
+                        "parts" => array()
+                    );
+                    $child = $this->parseParts($stream, $child_parts);
+                    $part['parts'][]=$child;
                 }
+            } else {
+                $part['body']=$this->parseContent($stream,$this->getTransferEncoding($part['headers']));
+                return $part;
             }
         }
-        return $parts;
+        return $part;
     }
+
+    protected function parseContent($stream, string $encoding):string
+    {
+        $contents = array();
+        while (!feof($stream)) {
+            $line = $this->getCurrentLine($stream,false);
+            if (preg_match(self::REGEX_BOUNDARY, $line)) {
+                break;
+            } else {
+                $contents[] =  $this->getCurrentLine($stream,true);
+            }
+        }
+        //remove last newline ( part of boundary)
+        if(end($contents) =="")
+            array_pop($contents);
+        return $this->contentDecoder->decode(implode(PHP_EOL, $contents), $encoding);
+    }
+
 
     private function extractValueHeader($header): string
     {
@@ -255,28 +266,6 @@ class MimeParser
         }
     }
 
-    /**
-     * @throws Exception\EndOfMultiPartReachedException
-     * @throws Exception\EndOfPartReachedException
-     */
-    protected function extractPart($stream, ?string $boundary, string $encoding): void
-    {
-        $rows = array();
-        while (!feof($stream)) {
-            $row = fgets($stream);
-
-            if ($boundary !== null) {
-                if (strpos($row, "--$boundary--") === 0) {
-                    throw new Exception\EndOfMultiPartReachedException($this->contentDecoder->decode(implode("", $rows), $encoding));
-                }
-                if (strpos($row, "--$boundary") === 0) {
-                    throw new Exception\EndOfPartReachedException($this->contentDecoder->decode(implode("", $rows), $encoding));
-                }
-            }
-            $rows[] = $row;
-        }
-        throw new Exception\EndOfMultiPartReachedException($this->contentDecoder->decode(implode("", $rows), $encoding));
-    }
 
     private function getTransferEncoding(array $partHeaders): string
     {
