@@ -8,9 +8,8 @@
 
 namespace Goetas\Mail\ToSwiftMailParser\Tests;
 use Goetas\Mail\ToSwiftMailParser\MimeParser;
-use PHPUnit\Framework\TestCase;
 
-class MimParserBug14Test extends TestCase
+class MimParserBug14Test extends \PHPUnit_Framework_TestCase
 {
     /** @var MimeParser */
     protected $parser;
