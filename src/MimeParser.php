@@ -11,8 +11,8 @@ class MimeParser
     private const SWIFT_CONTAINER_CACHE_KEY = 'cache';
     private const SWIFT_CONTAINER_ID_GENERATOR_KEY = 'mime.idgenerator';
 
-    protected $removeHeaders = array("Received", "From", "X-Original-To", "MIME-Version", "Received-SPF", "Delivered-To");
-    protected $allowedHeaders = array("return-path", "subject");
+    protected $removeHeaders = ['Received', 'From', 'X-Original-To', 'MIME-Version', 'Received-SPF', 'Delivered-To'];
+    protected $allowedHeaders = ['return-path', 'subject'];
     /**
      * @var ContentDecoder
      */
@@ -28,16 +28,16 @@ class MimeParser
      */
     private $swiftContainer;
 
-    public function __construct(array $allowedHeaders = array(), array $removeHeaders = array())
+    public function __construct(array $allowedHeaders = [], array $removeHeaders = [])
     {
-        $this->contentDecoder = new ContentDecoder ();
-        $this->headerDecoder = new HeaderDecoder ();
+        $this->contentDecoder = new ContentDecoder();
+        $this->headerDecoder = new HeaderDecoder();
 
         $this->allowedHeaders = array_merge($this->allowedHeaders, $allowedHeaders);
         $this->removeHeaders = array_merge($this->removeHeaders, $removeHeaders);
     }
 
-    public function setSwiftDependencyContainer(\Swift_DependencyContainer $swiftContainer)
+    public function setSwiftDependencyContainer(\Swift_DependencyContainer $swiftContainer): void
     {
         $this->swiftContainer = $swiftContainer;
     }
@@ -60,16 +60,22 @@ class MimeParser
         return $this->getSwiftDependencyContainer()->lookup(self::SWIFT_CONTAINER_CACHE_KEY);
     }
 
-    public function parseFile(string $path, bool $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null): \Swift_Mime_SimpleMimeEntity
-    {
+    public function parseFile(
+        string $path,
+        bool $fillHeaders = false,
+        \Swift_Mime_SimpleMimeEntity $message = null
+    ): \Swift_Mime_SimpleMimeEntity {
         $fp = fopen($path, "rb");
         $message = $this->parseStream($fp, $fillHeaders, $message);
         fclose($fp);
         return $message;
     }
 
-    public function parseString(string $string, bool $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null): \Swift_Mime_SimpleMimeEntity
-    {
+    public function parseString(
+        string $string,
+        bool $fillHeaders = false,
+        \Swift_Mime_SimpleMimeEntity $message = null
+    ): \Swift_Mime_SimpleMimeEntity {
         $fp = fopen("php://memory", "wb");
         fwrite($fp, $string);
         rewind($fp);
@@ -81,8 +87,11 @@ class MimeParser
     /**
      * @param resource $stream
      */
-    public function parseStream($stream, bool $fillHeaders = false, \Swift_Mime_SimpleMimeEntity $message = null): \Swift_Mime_SimpleMimeEntity
-    {
+    public function parseStream(
+        $stream,
+        bool $fillHeaders = false,
+        \Swift_Mime_SimpleMimeEntity $message = null
+    ): \Swift_Mime_SimpleMimeEntity {
         $partHeaders = $this->extractHeaders($stream);
 
         $filteredHeaders = $this->filterHeaders($partHeaders);
@@ -96,7 +105,7 @@ class MimeParser
         $headers = $this->createHeadersSet($filteredHeaders);
 
         foreach ($headers->getAll() as $name => $header) {
-            if ($fillHeaders || in_array(strtolower($header->getFieldName()), $this->allowedHeaders)) {
+            if ($fillHeaders || in_array(strtolower($header->getFieldName()), $this->allowedHeaders, true)) {
                 $message->getHeaders()->set($header);
             }
         }
@@ -107,16 +116,16 @@ class MimeParser
 
     protected function extractHeaders($stream): array
     {
-        $headers = array();
+        $headers = [];
         $hName = null;
         while (!feof($stream)) {
             $row = fgets($stream);
-            if ($row == "\r\n" || $row == "\n" || $row == "\r") {
+            if ($row === "\r\n" || $row === "\n" || $row === "\r") {
                 break;
             }
             if (preg_match('/^([a-z0-9\-]+)\s*:(.*)/i', $row, $mch)) {
                 $hName = strtolower($mch[1]);
-                if (!in_array($hName, array("content-type", "content-transfer-encoding"))) {
+                if (!in_array($hName, ["content-type", "content-transfer-encoding"], true)) {
                     $hName = $mch[1];
                 }
                 $row = $mch[2];
@@ -135,8 +144,10 @@ class MimeParser
     private function filterHeaders(array $headers): array
     {
         foreach ($headers as $header => $values) {
-            if (in_array(strtolower($header), $this->removeHeaders) && !in_array(strtolower($header), $this->allowedHeaders)) {
-                unset ($headers[$header]);
+            if (in_array(strtolower($header), $this->removeHeaders, true)
+                && !in_array(strtolower($header), $this->allowedHeaders, true)
+            ) {
+                unset($headers[$header]);
             }
         }
         return $headers;
@@ -144,7 +155,7 @@ class MimeParser
 
     protected function parseParts($stream, array $partHeaders): array
     {
-        $parts = array();
+        $parts = [];
         $contentType = $this->extractValueHeader($this->getContentType($partHeaders));
 
         $boundary = null;
@@ -160,13 +171,13 @@ class MimeParser
             // body
             $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
         } catch (Exception\EndOfPartReachedException $e) {
-            $parts = array(
+            $parts = [
                 "type" => $contentType,
                 "headers" => $partHeaders,
                 "body" => $e->getData(),
                 "boundary" => $boundary,
-                "parts" => array()
-            );
+                "parts" => [],
+            ];
         }
 
         if ($boundary) {
@@ -186,13 +197,13 @@ class MimeParser
                         $this->extractPart($stream, $boundary, $this->getTransferEncoding($partHeaders));
                     }
                 } catch (Exception\EndOfPartReachedException $e) {
-                    $parts["parts"][] = array(
+                    $parts["parts"][] = [
                         "type" => $childContentType,
                         "parent-type" => $contentType,
                         "headers" => $partHeaders,
                         "body" => $e->getData(),
-                        "parts" => array()
-                    );
+                        "parts" => []
+                    ];
 
                     if ($e instanceof Exception\EndOfMultiPartReachedException) {
                         break;
@@ -205,12 +216,12 @@ class MimeParser
 
     private function extractValueHeader($header): string
     {
-        $pos = stripos($header, ';');
+        $pos = strpos($header, ';');
         if ($pos !== false) {
             return substr($header, 0, $pos);
-        } else {
-            return $header;
         }
+
+        return $header;
     }
 
     private function getContentType(array $partHeaders): string
@@ -224,11 +235,10 @@ class MimeParser
 
     private function extractHeaderParts(string $header): array
     {
-        if (stripos($header, ';') !== false) {
-
+        if (strpos($header, ';') !== false) {
             $parts = explode(";", $header);
             array_shift($parts);
-            $p = array();
+            $p = [];
             $part = '';
             foreach ($parts as $pv) {
                 if (preg_match('/="[^"]+$/', $pv)) {
@@ -239,9 +249,9 @@ class MimeParser
                     $part .= ';' . $pv;
                     if (preg_match('/="[^"]+$/', $part)) {
                         continue;
-                    } else {
-                        $pv = $part;
                     }
+
+                    $pv = $part;
                 }
                 if (strpos($pv, '=') === false) {
                     continue;
@@ -250,9 +260,9 @@ class MimeParser
                 $p[$k] = trim($v, '"');
             }
             return $p;
-        } else {
-            return array();
         }
+
+        return [];
     }
 
     /**
@@ -261,7 +271,7 @@ class MimeParser
      */
     protected function extractPart($stream, ?string $boundary, string $encoding): void
     {
-        $rows = array();
+        $rows = [];
         while (!feof($stream)) {
             $row = fgets($stream);
 
@@ -295,7 +305,7 @@ class MimeParser
             switch (strtolower($name)) {
                 case "content-type":
                     $parts = $this->extractHeaderParts($value);
-                    unset ($parts["boundary"]);
+                    unset($parts["boundary"]);
                     $headers->addParameterizedHeader($name, $this->extractValueHeader($value), $parts);
                     break;
                 case "return-path":
@@ -313,7 +323,7 @@ class MimeParser
                 case "bcc":
                 case "reply-to":
                 case "cc":
-                    $adresses = array();
+                    $adresses = [];
                     if (preg_match_all('/(.*?)<([a-z][a-z0-9_\-\.]*@[a-z0-9\.\-]*\.[a-z]{2,5})>\s*[;,]*/i', $value, $mch)) {
                         foreach ($mch[0] as $k => $mail) {
                             if (!$mch[1][$k]) {
@@ -339,8 +349,7 @@ class MimeParser
 
     protected function createMessage(array $message, \Swift_Mime_SimpleMimeEntity $entity): void
     {
-        if (stripos($message["type"], 'multipart/') !== false && !empty($message["parts"])) {
-
+        if (!empty($message["parts"]) && stripos($message["type"], 'multipart/') !== false) {
             if (strpos($message["type"], '/alternative')) {
                 $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_ALTERNATIVE;
             } elseif (strpos($message["type"], '/related')) {
@@ -351,9 +360,8 @@ class MimeParser
                 $nestingLevel = \Swift_Mime_SimpleMimeEntity::LEVEL_TOP;
             }
 
-            $childs = array();
+            $childs = [];
             foreach ($message["parts"] as $part) {
-
                 $headers = $this->createHeadersSet($part["headers"]);
                 $encoder = $this->getEncoder($this->getTransferEncoding($part["headers"]));
 

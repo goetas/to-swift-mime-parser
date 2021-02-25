@@ -4,7 +4,7 @@ namespace Goetas\Mail\ToSwiftMailParser\Mime;
 
 class HeaderDecoder
 {
-    private $decodeWindows1252 = false;
+    private $decodeWindows1252;
 
     public function __construct(bool $decodeWindows1252 = false)
     {

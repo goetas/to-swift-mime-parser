@@ -2,17 +2,20 @@
 
 namespace Goetas\Mail\ToSwiftMailParser\Tests;
 
+use Goetas\Mail\ToSwiftMailParser\Exception\InvalidMessageFormatException;
 use Goetas\Mail\ToSwiftMailParser\MimeParser;
+use PHPUnit\Framework\TestCase;
 
-class BasicTest extends \PHPUnit_Framework_TestCase
+class BasicTest extends TestCase
 {
     protected $parser;
-    public function setUp()
+
+    public function setUp(): void
     {
         error_reporting(E_ALL);
         $this->parser = new MimeParser();
     }
-    protected function assertionsTest1($mail)
+    protected function assertionsTest1($mail): void
     {
         $this->assertEquals(array('john@example.com' => 'John Smith'), $mail->getFrom());
         $this->assertEquals(array('mark@example.com' => 'Mark Smith'), $mail->getTo());
@@ -32,7 +35,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals("text/plain", $children[1]->getContentType());
     }
 
-    public function testParseString()
+    public function testParseString(): void
     {
         // read a mail message saved into eml format (or similar)
         $inputStream = file_get_contents(__DIR__ . '/res/test1.txt');
@@ -42,7 +45,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertionsTest1($mail);
     }
 
-    public function testParseStream()
+    public function testParseStream(): void
     {
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/test1.txt', 'rb');
@@ -52,7 +55,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertionsTest1($mail);
     }
 
-    public function testParseFile()
+    public function testParseFile(): void
     {
         // read a mail message saved into eml format (or similar)
         $mail = $this->parser->parseFile(__DIR__ . '/res/test1.txt', true); // now $mail is a \Swift_Message  object
@@ -60,7 +63,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertionsTest1($mail);
     }
 
-    public function testParse2()
+    public function testParse2(): void
     {
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/test2.txt', 'rb');
@@ -76,7 +79,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertCount(0, $mail->getChildren());
     }
 
-    public function testParse3()
+    public function testParse3(): void
     {
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/test3.txt', 'rb');
@@ -91,19 +94,18 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertCount(0, $mail->getChildren());
     }
 
-    /**
-     * @expectedException \Goetas\Mail\ToSwiftMailParser\Exception\InvalidMessageFormatException
-     * @expectedExceptionMessage The Content-Type header is not well formed, boundary is missing
-     */
-    public function testParseWrongBoundary()
+    public function testParseWrongBoundary(): void
     {
+        $this->expectException(InvalidMessageFormatException::class);
+        $this->expectExceptionMessage('The Content-Type header is not well formed, boundary is missing');
+
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/test-wrong-boundary.txt', 'rb');
 
         $this->parser->parseStream($inputStream, true); // now $mail is a \Swift_Message  object
     }
 
-    public function testParseWrongContent()
+    public function testParseWrongContent(): void
     {
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/wrong-boundary.txt', 'rb');
@@ -118,7 +120,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertEmpty($mail->getChildren());
     }
 
-    public function testPartiallyNotWellFormedContentType()
+    public function testPartiallyNotWellFormedContentType(): void
     {
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/wrong-content-type.txt', 'rb');
@@ -131,7 +133,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertionsTest1($mail);
     }
 
-    public function testDifferentHeadersEncoding()
+    public function testDifferentHeadersEncoding(): void
     {
         // read a mail message saved into eml format (or similar)
         $inputStream = fopen(__DIR__ . '/res/test-different-headers-encoding.txt', 'rb');
@@ -142,7 +144,7 @@ class BasicTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Táste', $mail->getSubject());
     }
 
-    public function testHeaderWithSemicolon()
+    public function testHeaderWithSemicolon(): void
     {
         $inputStream = fopen(__DIR__ . '/res/test-header-with-semicolon.txt', 'rb');
 
