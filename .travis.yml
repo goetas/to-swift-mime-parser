@@ -6,16 +6,12 @@ cache:
     - vendor
     - $HOME/.composer/cache
 php:
-  - 7.1
   - 7.2
-
-matrix:
-  include:
-    - php: 7.1
-      env: COMPOSER_FLAGS='--prefer-lowest --prefer-stable'
+  - 7.3
+  - 7.4
+  - 8.0
 
 before_script:
-  - if [[ $TRAVIS_PHP_VERSION = '7.1' ]] ; then PHPUNIT_FLAGS="--coverage-clover=coverage.clover"; else phpenv config-rm xdebug.ini; fi
   - composer self-update
   - composer update $COMPOSER_FLAGS
 
@@ -24,4 +20,3 @@ script:
 
 after_script:
   - wget https://scrutinizer-ci.com/ocular.phar
-  - if [[ $TRAVIS_PHP_VERSION = '7.1' ]] ; then php ocular.phar code-coverage:upload --format=php-clover coverage.clover; fi

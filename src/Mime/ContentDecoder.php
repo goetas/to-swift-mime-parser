@@ -6,13 +6,18 @@ class ContentDecoder
 {
     public function decode(string $string, string $from): string
     {
-        if ($from == "base64") {
+        if ($from === "base64") {
             return base64_decode($string);
-        } elseif ($from == "7bit") {
-            return quoted_printable_decode($string);
-        } elseif ($from == "quoted-printable") {
+        }
+
+        if ($from === "7bit") {
             return quoted_printable_decode($string);
         }
+
+        if ($from === "quoted-printable") {
+            return quoted_printable_decode($string);
+        }
+
         return $string;
     }
 }
